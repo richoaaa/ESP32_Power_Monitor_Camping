@@ -1124,8 +1124,7 @@ void readings() {
 
     if (SOC < 90 && volts15log[0] < floatVoltage) {
       Status = "BOOST...";
-    } else if (SOC > 90 && volts15log[1] > floatVoltage && 
-     < floatVoltage) {
+    } else if (SOC > 90 && volts15log[1] > floatVoltage && volts2hr < floatVoltage) {
       Status = "ABSORPTION...";
     } else if (SOC > 90 && volts2hr > floatVoltage) {
       Status = "FLOAT...";
