@@ -88,7 +88,7 @@ const char MAIN_page[] PROGMEM = R"=====(
 </tr>
 <tr>
   <td align="right"><img src="\clock.png"></td>
-  <td align="left"><span id="CurrentTime"></span> (<span id="ServerUpTime"></span>)</td>
+  <td align="left"> Server Time <span id="ServerTime"></span> (<span id="ServerUpTime"></span>)</td>
 </tr>
 </table>
 
@@ -114,9 +114,9 @@ Overall State: <span id="message"></span>
         document.getElementById("Temp1").innerHTML = obj.data[5].dataValue;
         document.getElementById("amphIn").innerHTML = obj.data[6].dataValue;
         document.getElementById("amphOut").innerHTML = obj.data[7].dataValue;
-        document.getElementById("message").innerHTML = obj.data[8].dataValue;
-        document.getElementById("status").innerHTML = obj.data[9].dataValue;
-        document.getElementById("CurrentTime").innerHTML = obj.data[10].dataValue;
+        document.getElementById("ServerTime").innerHTML = obj.data[8].dataValue;
+        document.getElementById("message").innerHTML = obj.data[9].dataValue;
+        document.getElementById("status").innerHTML = obj.data[10].dataValue;
         document.getElementById("ServerUpTime").innerHTML = obj.data[11].dataValue;
       }
     };

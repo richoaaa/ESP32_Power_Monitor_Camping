@@ -7,13 +7,13 @@
 // #include <ESP8266mDNS.h>
 
 #include <Arduino.h>
-// #include <SPIFFS.h>
+#include <SPIFFS.h>
 #include <WiFi.h>
 // #include <ESP8266WebServer.h>
 // #include <ESPAsyncWebServer.h>
 // #include <ESPAsync_WiFiManager.h>
 #include <WebServer.h>
-#include "ElegantOTA.h"
+#include <ElegantOTA.h>
 #include <EEPROM.h>       //0:
 #define EEPROM_SIZE 4000  //4096
 #include <ESPmDNS.h>
@@ -21,7 +21,6 @@
 
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
-// #include <Arduino_JSON.h>
 #include "index.h"
 #include "config.h"
 #include "test.h"
@@ -64,7 +63,7 @@ const int voltsMCUPin = 32;
 const int ampsPin = 35;  // Note that the ESP32 cannot read ADC2 pins while WiFi is in use
 unsigned int freeMem;
 int LedSwitch = 0;
-int LED_BUILTIN = 2;
+int LED = 2;
 const char* ssid = "Bremner Mate";
 const char* password = "";
 
@@ -130,8 +129,9 @@ float MaxPowerIn = 0;
 String MaxPowerInTime = "";
 String Message;
 String Status;
-JSONVar SensorReadings;
 String json;
+// JSONVar SensorReadings;
+JsonVariant SensorReadings;
 int hrAdj = 0;
 int minAdj = 0;
 
@@ -325,6 +325,10 @@ void getConfig() {
   //  Serial.println("getConfig has been served");
 }
 
+void getFreeMemory() {
+  freeMem = ESP.getFreeHeap();
+}
+
 void getTest() {
   getFreeMemory();
   int tmpVolts = analogRead(voltsPin);
@@ -441,137 +445,7 @@ void getStats() {
   server.send(200, "text/html", text1);
 }
 
-void getGraphData() {
-  String text1 = "{\"graph\":[";
-  text1 += GraphTime();
-  text1 += ",";
-  text1 += ampsIn;
-  text1 += ",";
-  text1 += ampsOut;
-  text1 += ",";
-  text1 += volts;
-  text1 += "]}";  //Note this end stopper is different
 
-  server.send(200, "text/html", text1);
-  // {{"time":"01:24"},{"In":"9.60"},{"Out":"-8.60"}}
-  Serial.print("Current readings: ");
-  Serial.print("\t");
-  Serial.println(text1);
-}
-
-void getGraphAmpsIn() {
-  // Serial.print("Intervals: ");
-  // Serial.println(interval15s);
-  String text1 = "{\"ampin\":[";
-  for (int i = 1; i <= interval15s; i++) {
-    text1 += "[";
-    text1 += (GraphTimeHistory() + i * 15 * 60 * 1000);
-    text1 += ",";
-    text1 += (ampsIn15log[i - 1]);
-    if (i == interval15s) {
-      text1 += "]";
-    } else {
-      text1 += "], ";
-    }
-  }
-  text1 += "]}";
-
-  server.send(200, "text/html", text1.c_str());
-  Serial.print("Historic data Amps In: ");
-  Serial.print("\t");
-  Serial.print(text1);
-}
-
-void getGraphAmpsInCummulative() {
-  // Serial.print("Intervals: ");
-  // Serial.println(interval15s);
-  String text1 = "{\"ampincum\":[";
-  for (int i = 1; i <= interval15s; i++) {
-    text1 += "[";
-    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
-    text1 += ",";
-    float cumsum = 0;
-    for (int x = 1; x <= i; x++) {
-      cumsum += ampsIn15log[x - 1];
-    }
-    text1 += cumsum;
-    if (i == interval15s) {
-      text1 += "]";
-    } else {
-      text1 += "], ";
-    }
-  }
-
-  text1 += "]}";
-
-  server.send(200, "text/html", text1.c_str());
-  // Serial.print("Historic data Amps In: ");
-  // Serial.print(text1);
-  // Serial.print("\t");
-}
-
-void sendGraphAmpsOut() {
-  String text1 = "{\"ampout\":[";
-  for (int i = 1; i <= interval15s; i++) {
-    text1 += "[";
-    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
-    text1 += ",";
-    text1 += ampsOut15log[i - 1];
-    if (i == interval15s) {
-      text1 += "]";
-    } else {
-      text1 += "], ";
-    }
-  }
-  text1 += "]}";
-
-  server.send(200, "text/html", text1.c_str());
-  Serial.print("\t");
-  Serial.println(text1);
-}
-void sendGraphvolts() {
-  String text1 = "{\"volts\":[";
-  for (int i = 1; i <= interval15s; i++) {
-    text1 += "[";
-    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
-    text1 += ",";
-    text1 += volts15log[i - 1];
-    if (i == interval15s) {
-      text1 += "]";
-    } else {
-      text1 += "], ";
-    }
-  }
-  text1 += "]}";
-
-  server.send(200, "text/html", text1.c_str());
-  // Serial.print("\t");
-  // Serial.println(text1);
-}
-void sendGraphAmpsOutCummulative() {
-  String text1 = "{\"ampoutcum\":[";
-  for (int i = 1; i <= interval15s; i++) {
-    text1 += "[";
-    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
-    text1 += ",";
-    float cumsum = 0;
-    for (int x = 1; x <= i; x++) {
-      cumsum += ampsOut15log[x - 1];
-    }
-    text1 += cumsum;
-    if (i == interval15s) {
-      text1 += "]";
-    } else {
-      text1 += "], ";
-    }
-  }
-  text1 += "]}";
-
-  server.send(200, "text/html", text1.c_str());
-  // Serial.print("\t");
-  // Serial.print("sendGraphAmpsOutCummulative: ");
-  // Serial.println(text1);
-}
 
 void demoMode() {
   volts = 10 * voltsCounter;
@@ -641,6 +515,450 @@ void getData() {  // Content for main page
   server.send(200, "text/html", text2);
   // count++;
 }
+
+
+void (*resetFunc)(void) = 0;  //declare reset function at address 0
+
+void SystemReboot() {
+  resetFunc();  //call reset to restart the microcontroller
+}
+
+String getContentType(String filename) {  // convert the file extension to the MIME type
+  if (filename.endsWith(".html")) return "text/html";
+  else if (filename.endsWith(".css"))
+    return "text/css";
+  else if (filename.endsWith(".js"))
+    return "application/javascript";
+  else if (filename.endsWith(".ico"))
+    return "image/x-icon";
+  else if (filename.endsWith(".jpg"))
+    return "image/jpeg";
+  return "text/plain";
+}
+
+bool handleFileRead(String path) {  // send the right file to the client (if it exists)
+  //  Serial.println("handleFileRead: " + path);
+  if (path.endsWith("/")) path += "index.html";          // If a folder is requested, send the index file
+  String contentType = getContentType(path);             // Get the MIME type
+  if (SPIFFS.exists(path)) {                             // If the file exists
+    File file = SPIFFS.open(path, "r");                  // Open it
+    size_t sent = server.streamFile(file, contentType);  // And send it to the client. This is commented out as compiling identified an issue with it
+    file.close();                                        // Then close the file again
+    return true;
+  }
+  Serial.print("HandleFileRead: File Not Found. Can not find ");
+  Serial.println(path);
+  return false;  // If the file doesn't exist, return false
+}
+
+////////////////////////////////
+// Utils to return HTTP codes
+
+void replyOK() {
+  server.send(200, FPSTR(TEXT_PLAIN), "");
+}
+
+void replyOKWithMsg(String msg) {
+  server.send(200, FPSTR(TEXT_PLAIN), msg);
+}
+
+void replyNotFound(String msg) {
+  server.send(404, FPSTR(TEXT_PLAIN), msg);
+}
+
+void replyBadRequest(String msg) {
+  DBG_OUTPUT_PORT.println(msg);
+  server.send(400, FPSTR(TEXT_PLAIN), msg + "\r\n");
+}
+
+void replyServerError(String msg) {
+  DBG_OUTPUT_PORT.println(msg);
+  server.send(500, FPSTR(TEXT_PLAIN), msg + "\r\n");
+}
+
+////////////////////////////////
+// Request handlers
+
+/*
+   The "Not Found" handler catches all URI not explicitely declared in code
+   First try to find and return the requested file from the filesystem,
+   and if it fails, return a 404 page with debug information
+*/
+void handleNotFound() {
+  String uri = WebServer::urlDecode(server.uri());  // required to read paths with blanks
+
+  if (handleFileRead(uri)) {
+    return;
+  }
+
+  // Dump debug data
+  String message;
+  message.reserve(100);
+  message = F("Error: File not found\n\nURI: ");
+  message += uri;
+  message += F("\nMethod: ");
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += F("\nArguments: ");
+  message += server.args();
+  message += '\n';
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += F(" NAME:");
+    message += server.argName(i);
+    message += F("\n VALUE:");
+    message += server.arg(i);
+    message += '\n';
+  }
+  message += "path=";
+  message += server.arg("path");
+  message += '\n';
+  DBG_OUTPUT_PORT.print(message);
+
+  return replyNotFound(message);
+}
+
+
+void SaveConFig() {
+  if (server.method() == HTTP_POST) {
+    Serial.println("Button 1 pressed");
+  }
+}
+
+void SetClock() {
+  if (server.method() == HTTP_POST) {
+    Serial.println("Button 1 pressed");
+  }
+}
+
+void ProcessStatsRst() {
+  Serial.println("Stats resetting...");
+  amphIn = 0;
+  amphOut = 0;
+  MaxampIn = 0;
+  MaxampInTime = "";
+  MaxampOut = 0;
+  MaxampOutTime = "";
+  MinVolts = 100;
+  MinVoltsTime = "";
+  MaxVolts = 0;
+  MaxVoltsTime = "";
+  MinSOC = 100;
+  MinSOCTime = "";
+  MaxSOC = 0;
+  MaxSOCTime = "";
+  FridgeMin = 100;
+  FridgeMinTime = "";
+  FridgeMax = -100;
+  FridgeMaxTime = "";
+  RadMin = 100;
+  RadMinTime = "";
+  RadMax = -100;
+  RadMaxTime = "";
+}
+
+float readTempData1() {
+  byte i;
+  byte present = 0;
+  byte data[12];
+  byte addr[8] = { 0x28, 0x5A, 0x2E, 0x79, 0x97, 0x18, 0x03, 0xB4};
+
+  float celsius;
+
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44, 1);  // start conversion,
+  delay(50);
+
+  present = ds.reset();
+  ds.select(addr);
+  ds.write(0xBE);  // Read Scratchpad
+
+  for (i = 0; i < 9; i++) {  // we need 9 bytes
+    data[i] = ds.read();
+  }
+
+  int16_t raw1 = (data[1] << 8) | data[0];
+
+  byte cfg = (data[4] & 0x60);
+  // at lower res, the low bits are undefined, so let's zero them
+  if (cfg == 0x00) raw1 = raw1 & ~7;  // 9 bit resolution, 93.75 ms
+  else if (cfg == 0x20)
+    raw1 = raw1 & ~3;  // 10 bit res, 187.5 ms
+  else if (cfg == 0x40)
+    raw1 = raw1 & ~1;  // 11 bit res, 375 ms
+  //// default is 12 bit resolution, 750 ms conversion time
+
+  celsius = (float)raw1 / 16.0;
+  return celsius;
+}
+
+float readTempData2() {
+  byte i;
+  byte present = 0;
+  byte data[12];
+  byte addr[8] = {0x28, 0x88, 0x2D, 0x79, 0x97, 0x18, 0x03, 0x50};
+
+  float celsius;
+
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44, 1);  // start conversion,
+  delay(50);
+
+  present = ds.reset();
+  ds.select(addr);
+  ds.write(0xBE);  // Read Scratchpad
+
+  for (i = 0; i < 9; i++) {  // we need 9 bytes
+    data[i] = ds.read();
+  }
+
+  int16_t raw1 = (data[1] << 8) | data[0];
+
+  byte cfg = (data[4] & 0x60);
+  // at lower res, the low bits are undefined, so let's zero them
+  if (cfg == 0x00) raw1 = raw1 & ~7;  // 9 bit resolution, 93.75 ms
+  else if (cfg == 0x20)
+    raw1 = raw1 & ~3;  // 10 bit res, 187.5 ms
+  else if (cfg == 0x40)
+    raw1 = raw1 & ~1;  // 11 bit res, 375 ms
+  //// default is 12 bit resolution, 750 ms conversion time
+
+  celsius = (float)raw1 / 16.0;
+  return celsius;
+}
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
+  Serial.printf("Listing directory: %s\r\n", dirname);
+
+  File root = fs.open(dirname);
+  if (!root) {
+    Serial.println("- failed to open directory");
+    return;
+  }
+  if (!root.isDirectory()) {
+    Serial.println(" - not a directory");
+    return;
+  }
+
+  File file = root.openNextFile();
+  while (file) {
+    if (file.isDirectory()) {
+      Serial.print("  DIR : ");
+      Serial.println(file.name());
+      if (levels) {
+        listDir(fs, file.name(), levels - 1);
+      }
+    } else {
+      Serial.print("  FILE: ");
+      Serial.print(file.name());
+      Serial.print("\tSIZE: ");
+      Serial.println(file.size());
+    }
+    file = root.openNextFile();
+  }
+}
+
+unsigned long GraphTime() {  // the hrAdj and minAdj comes from the clock via the config page
+  int temphr = hrAdj * 60 * 60 * 1000;
+  int tempmin = minAdj * 60 * 1000;
+  return (millis() + temphr + tempmin);
+}
+void getGraphData() {
+  String text1 = "{\"graph\":[";
+  text1 += GraphTime();
+  text1 += ",";
+  text1 += ampsIn;
+  text1 += ",";
+  text1 += ampsOut;
+  text1 += ",";
+  text1 += volts;
+  text1 += "]}";  //Note this end stopper is different
+
+  server.send(200, "text/html", text1);
+  // {{"time":"01:24"},{"In":"9.60"},{"Out":"-8.60"}}
+  Serial.print("Current readings: ");
+  Serial.print("\t");
+  Serial.println(text1);
+}
+unsigned long GraphTimeHistory() {
+  return (GraphTime() - millis());
+}
+
+void sendGraphAmpsOut() {
+  String text1 = "{\"ampout\":[";
+  for (int i = 1; i <= interval15s; i++) {
+    text1 += "[";
+    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
+    text1 += ",";
+    text1 += ampsOut15log[i - 1];
+    if (i == interval15s) {
+      text1 += "]";
+    } else {
+      text1 += "], ";
+    }
+  }
+  text1 += "]}";
+
+  server.send(200, "text/html", text1.c_str());
+  Serial.print("\t");
+  Serial.println(text1);
+}
+void sendGraphvolts() {
+  String text1 = "{\"volts\":[";
+  for (int i = 1; i <= interval15s; i++) {
+    text1 += "[";
+    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
+    text1 += ",";
+    text1 += volts15log[i - 1];
+    if (i == interval15s) {
+      text1 += "]";
+    } else {
+      text1 += "], ";
+    }
+  }
+  text1 += "]}";
+
+  server.send(200, "text/html", text1.c_str());
+  // Serial.print("\t");
+  // Serial.println(text1);
+}
+void sendGraphAmpsOutCummulative() {
+  String text1 = "{\"ampoutcum\":[";
+  for (int i = 1; i <= interval15s; i++) {
+    text1 += "[";
+    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
+    text1 += ",";
+    float cumsum = 0;
+    for (int x = 1; x <= i; x++) {
+      cumsum += ampsOut15log[x - 1];
+    }
+    text1 += cumsum;
+    if (i == interval15s) {
+      text1 += "]";
+    } else {
+      text1 += "], ";
+    }
+  }
+  text1 += "]}";
+
+  server.send(200, "text/html", text1.c_str());
+  // Serial.print("\t");
+  // Serial.print("sendGraphAmpsOutCummulative: ");
+  // Serial.println(text1);
+}
+
+void getGraphAmpsInCummulative() {
+  // Serial.print("Intervals: ");
+  // Serial.println(interval15s);
+  String text1 = "{\"ampincum\":[";
+  for (int i = 1; i <= interval15s; i++) {
+    text1 += "[";
+    text1 += GraphTimeHistory() + (i * 15 * 60 * 1000);
+    text1 += ",";
+    float cumsum = 0;
+    for (int x = 1; x <= i; x++) {
+      cumsum += ampsIn15log[x - 1];
+    }
+    text1 += cumsum;
+    if (i == interval15s) {
+      text1 += "]";
+    } else {
+      text1 += "], ";
+    }
+  }
+
+  text1 += "]}";
+
+  server.send(200, "text/html", text1.c_str());
+  // Serial.print("Historic data Amps In: ");
+  // Serial.print(text1);
+  // Serial.print("\t");
+}
+
+void getGraphAmpsIn() {
+  // Serial.print("Intervals: ");
+  // Serial.println(interval15s);
+  String text1 = "{\"ampin\":[";
+  for (int i = 1; i <= interval15s; i++) {
+    text1 += "[";
+    text1 += (GraphTimeHistory() + i * 15 * 60 * 1000);
+    text1 += ",";
+    text1 += (ampsIn15log[i - 1]);
+    if (i == interval15s) {
+      text1 += "]";
+    } else {
+      text1 += "], ";
+    }
+  }
+  text1 += "]}";
+
+  server.send(200, "text/html", text1.c_str());
+  Serial.print("Historic data Amps In: ");
+  Serial.print("\t");
+  Serial.print(text1);
+}
+
+void getReadableTime() {
+  unsigned long currentMillis;
+  unsigned long seconds;
+  unsigned long days;
+  readableTime ="";
+  currentMillis = GraphTime();
+  seconds = currentMillis / 1000;
+  minutes = (seconds / 60);
+  hours = (minutes / 60);
+  days = hours / 24;
+  currentMillis %= 1000;
+  seconds %= 60;
+  minutes %= 60;
+  hours %= 24;
+  
+  if (days > 0) {
+    readableTime = String(days) + " ";
+  }
+  if (hours > 0) {
+    readableTime += String(hours) + ":";
+  }
+  if (minutes < 10) {
+    readableTime += "0";
+  }
+  readableTime += String(minutes) + ":";
+  if (seconds < 10) {
+    readableTime += "0";
+  }
+  readableTime += String(seconds);
+}
+
+void getServerUpTime() {
+  unsigned long currentMillis;
+  unsigned long seconds;
+  unsigned long days;
+  ServerUpTime ="";
+  currentMillis = millis();
+  seconds = currentMillis / 1000;
+  minutes = (seconds / 60);
+  hours = (minutes / 60);
+  days = hours / 24;
+  currentMillis %= 1000;
+  seconds %= 60;
+  minutes %= 60;
+  hours %= 24;
+  
+  if (days > 0) {
+    ServerUpTime = String(days) + " ";
+  }
+  if (hours > 0) {
+    ServerUpTime += String(hours) + ":";
+  }
+  if (minutes < 10) {
+    ServerUpTime += "0";
+  }
+  ServerUpTime += String(minutes) + ":";
+  if (seconds < 10) {
+    ServerUpTime += "0";
+  }
+  ServerUpTime += String(seconds);
+}
+
 void readings() {
   BatCapacity = EEPROM.read(0);
   ChargeFactor = EEPROM.read(1);
@@ -839,321 +1157,6 @@ void readings() {
 }
 
 
-void (*resetFunc)(void) = 0;  //declare reset function at address 0
-
-void SystemReboot() {
-  resetFunc();  //call reset to restart the microcontroller
-}
-
-String getContentType(String filename) {  // convert the file extension to the MIME type
-  if (filename.endsWith(".html")) return "text/html";
-  else if (filename.endsWith(".css"))
-    return "text/css";
-  else if (filename.endsWith(".js"))
-    return "application/javascript";
-  else if (filename.endsWith(".ico"))
-    return "image/x-icon";
-  else if (filename.endsWith(".jpg"))
-    return "image/jpeg";
-  return "text/plain";
-}
-
-bool handleFileRead(String path) {  // send the right file to the client (if it exists)
-  //  Serial.println("handleFileRead: " + path);
-  if (path.endsWith("/")) path += "index.html";          // If a folder is requested, send the index file
-  String contentType = getContentType(path);             // Get the MIME type
-  if (SPIFFS.exists(path)) {                             // If the file exists
-    File file = SPIFFS.open(path, "r");                  // Open it
-    size_t sent = server.streamFile(file, contentType);  // And send it to the client. This is commented out as compiling identified an issue with it
-    file.close();                                        // Then close the file again
-    return true;
-  }
-  Serial.print("HandleFileRead: File Not Found. Can not find ");
-  Serial.println(path);
-  return false;  // If the file doesn't exist, return false
-}
-
-////////////////////////////////
-// Utils to return HTTP codes
-
-void replyOK() {
-  server.send(200, FPSTR(TEXT_PLAIN), "");
-}
-
-void replyOKWithMsg(String msg) {
-  server.send(200, FPSTR(TEXT_PLAIN), msg);
-}
-
-void replyNotFound(String msg) {
-  server.send(404, FPSTR(TEXT_PLAIN), msg);
-}
-
-void replyBadRequest(String msg) {
-  DBG_OUTPUT_PORT.println(msg);
-  server.send(400, FPSTR(TEXT_PLAIN), msg + "\r\n");
-}
-
-void replyServerError(String msg) {
-  DBG_OUTPUT_PORT.println(msg);
-  server.send(500, FPSTR(TEXT_PLAIN), msg + "\r\n");
-}
-
-////////////////////////////////
-// Request handlers
-
-/*
-   The "Not Found" handler catches all URI not explicitely declared in code
-   First try to find and return the requested file from the filesystem,
-   and if it fails, return a 404 page with debug information
-*/
-void handleNotFound() {
-  String uri = WebServer::urlDecode(server.uri());  // required to read paths with blanks
-
-  if (handleFileRead(uri)) {
-    return;
-  }
-
-  // Dump debug data
-  String message;
-  message.reserve(100);
-  message = F("Error: File not found\n\nURI: ");
-  message += uri;
-  message += F("\nMethod: ");
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += F("\nArguments: ");
-  message += server.args();
-  message += '\n';
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += F(" NAME:");
-    message += server.argName(i);
-    message += F("\n VALUE:");
-    message += server.arg(i);
-    message += '\n';
-  }
-  message += "path=";
-  message += server.arg("path");
-  message += '\n';
-  DBG_OUTPUT_PORT.print(message);
-
-  return replyNotFound(message);
-}
-
-
-void SaveConFig() {
-  if (server.method() == HTTP_POST) {
-    Serial.println("Button 1 pressed");
-  }
-}
-
-void SetClock() {
-  if (server.method() == HTTP_POST) {
-    Serial.println("Button 1 pressed");
-  }
-}
-
-void ProcessStatsRst() {
-  Serial.println("Stats resetting...");
-  amphIn = 0;
-  amphOut = 0;
-  MaxampIn = 0;
-  MaxampInTime = "";
-  MaxampOut = 0;
-  MaxampOutTime = "";
-  MinVolts = 100;
-  MinVoltsTime = "";
-  MaxVolts = 0;
-  MaxVoltsTime = "";
-  MinSOC = 100;
-  MinSOCTime = "";
-  MaxSOC = 0;
-  MaxSOCTime = "";
-  FridgeMin = 100;
-  FridgeMinTime = "";
-  FridgeMax = -100;
-  FridgeMaxTime = "";
-  RadMin = 100;
-  RadMinTime = "";
-  RadMax = -100;
-  RadMaxTime = "";
-}
-
-void getFreeMemory() {
-  freeMem = ESP.getFreeHeap();
-}
-float readTempData1() {
-  byte i;
-  byte present = 0;
-  byte data[12];
-  byte addr[8] = { 0x28, 0x5A, 0x2E, 0x79, 0x97, 0x18, 0x03, 0xB4};
-
-  float celsius;
-
-  ds.reset();
-  ds.select(addr);
-  ds.write(0x44, 1);  // start conversion,
-  delay(50);
-
-  present = ds.reset();
-  ds.select(addr);
-  ds.write(0xBE);  // Read Scratchpad
-
-  for (i = 0; i < 9; i++) {  // we need 9 bytes
-    data[i] = ds.read();
-  }
-
-  int16_t raw1 = (data[1] << 8) | data[0];
-
-  byte cfg = (data[4] & 0x60);
-  // at lower res, the low bits are undefined, so let's zero them
-  if (cfg == 0x00) raw1 = raw1 & ~7;  // 9 bit resolution, 93.75 ms
-  else if (cfg == 0x20)
-    raw1 = raw1 & ~3;  // 10 bit res, 187.5 ms
-  else if (cfg == 0x40)
-    raw1 = raw1 & ~1;  // 11 bit res, 375 ms
-  //// default is 12 bit resolution, 750 ms conversion time
-
-  celsius = (float)raw1 / 16.0;
-  return celsius;
-}
-
-float readTempData2() {
-  byte i;
-  byte present = 0;
-  byte data[12];
-  byte addr[8] = {0x28, 0x88, 0x2D, 0x79, 0x97, 0x18, 0x03, 0x50};
-
-  float celsius;
-
-  ds.reset();
-  ds.select(addr);
-  ds.write(0x44, 1);  // start conversion,
-  delay(50);
-
-  present = ds.reset();
-  ds.select(addr);
-  ds.write(0xBE);  // Read Scratchpad
-
-  for (i = 0; i < 9; i++) {  // we need 9 bytes
-    data[i] = ds.read();
-  }
-
-  int16_t raw1 = (data[1] << 8) | data[0];
-
-  byte cfg = (data[4] & 0x60);
-  // at lower res, the low bits are undefined, so let's zero them
-  if (cfg == 0x00) raw1 = raw1 & ~7;  // 9 bit resolution, 93.75 ms
-  else if (cfg == 0x20)
-    raw1 = raw1 & ~3;  // 10 bit res, 187.5 ms
-  else if (cfg == 0x40)
-    raw1 = raw1 & ~1;  // 11 bit res, 375 ms
-  //// default is 12 bit resolution, 750 ms conversion time
-
-  celsius = (float)raw1 / 16.0;
-  return celsius;
-}
-void listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
-  Serial.printf("Listing directory: %s\r\n", dirname);
-
-  File root = fs.open(dirname);
-  if (!root) {
-    Serial.println("- failed to open directory");
-    return;
-  }
-  if (!root.isDirectory()) {
-    Serial.println(" - not a directory");
-    return;
-  }
-
-  File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
-      Serial.print("  DIR : ");
-      Serial.println(file.name());
-      if (levels) {
-        listDir(fs, file.name(), levels - 1);
-      }
-    } else {
-      Serial.print("  FILE: ");
-      Serial.print(file.name());
-      Serial.print("\tSIZE: ");
-      Serial.println(file.size());
-    }
-    file = root.openNextFile();
-  }
-}
-
-unsigned long GraphTime() {  // the hrAdj and minAdj comes from the clock via the config page
-  int temphr = hrAdj * 60 * 60 * 1000;
-  int tempmin = minAdj * 60 * 1000;
-  return (millis() + temphr + tempmin);
-}
-
-unsigned long GraphTimeHistory() {
-  return (GraphTime() - millis());
-}
-
-void getReadableTime() {
-  unsigned long currentMillis;
-  unsigned long seconds;
-  unsigned long days;
-  readableTime ="";
-  currentMillis = GraphTime();
-  seconds = currentMillis / 1000;
-  minutes = (seconds / 60);
-  hours = (minutes / 60);
-  days = hours / 24;
-  currentMillis %= 1000;
-  seconds %= 60;
-  minutes %= 60;
-  hours %= 24;
-  
-  if (days > 0) {
-    readableTime = String(days) + " ";
-  }
-  if (hours > 0) {
-    readableTime += String(hours) + ":";
-  }
-  if (minutes < 10) {
-    readableTime += "0";
-  }
-  readableTime += String(minutes) + ":";
-  if (seconds < 10) {
-    readableTime += "0";
-  }
-  readableTime += String(seconds);
-}
-
-void getServerUpTime() {
-  unsigned long currentMillis;
-  unsigned long seconds;
-  unsigned long days;
-  ServerUpTime ="";
-  currentMillis = millis();
-  seconds = currentMillis / 1000;
-  minutes = (seconds / 60);
-  hours = (minutes / 60);
-  days = hours / 24;
-  currentMillis %= 1000;
-  seconds %= 60;
-  minutes %= 60;
-  hours %= 24;
-  
-  if (days > 0) {
-    ServerUpTime = String(days) + " ";
-  }
-  if (hours > 0) {
-    ServerUpTime += String(hours) + ":";
-  }
-  if (minutes < 10) {
-    ServerUpTime += "0";
-  }
-  ServerUpTime += String(minutes) + ":";
-  if (seconds < 10) {
-    ServerUpTime += "0";
-  }
-  ServerUpTime += String(seconds);
-}
-
 void writeLongArrayIntoEEPROM(int address, long numbers[], int arraySize)
 {
   int addressIndex = address;
@@ -1182,7 +1185,7 @@ void readLongArrayFromEEPROM(int address, long numbers[], int arraySize)
 
 void setup() {
   Wire.begin();
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LED, OUTPUT);
   Serial.begin(115200);
     // Get the free flash memory space
   uint32_t freeSpace = ESP.getFreeSketchSpace();
@@ -1246,10 +1249,10 @@ void loop() {
   unsigned long TempMillis = millis();
   server.handleClient();
   while (millis() - TempMillis < 200) {
-    digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
+    digitalWrite(LED, HIGH);  // turn the LED on (HIGH is the voltage level)
   }
   // server.handleClient();
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(LED, LOW);
   readings();
 }
 

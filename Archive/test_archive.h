@@ -134,21 +134,17 @@ input:checked + .slider:before {
   <td align="left"><span id="volts"></span></td>
 </tr>
 <tr>
-  <td align="left">Solar (adc) </td>
-  <td align="left"><span id="solar"></span> </td>
+  <td align="left">Charger id="charger"></span> </td>
 </tr>
 <tr>
-  <td align="left">Charger (adc) </td>
-  <td align="left"><span id="charger"></span> </td>
+  <td align="left">Solar id="solar"></span> </td>
 </tr>
 <tr>
-  <td align="left">Amps out (adc) </td>
-  <td align="left"><span id="ampsout"></span> </td>
+  <td align="left">Amps Out id="ampsout"></span> </td>
 </tr>
 <tr>
-  <td align="left">Free Memory</td>      
+  <td align="left">Free Memory</td>
   <td align="left"> <span id="freemon"></span> </td>
-
 </tr>
 </tbody>
   </table>

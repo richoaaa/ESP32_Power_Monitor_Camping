@@ -134,16 +134,8 @@ input:checked + .slider:before {
   <td align="left"><span id="volts"></span></td>
 </tr>
 <tr>
-  <td align="left">Solar (adc) </td>
-  <td align="left"><span id="solar"></span> </td>
-</tr>
-<tr>
-  <td align="left">Charger (adc) </td>
-  <td align="left"><span id="charger"></span> </td>
-</tr>
-<tr>
-  <td align="left">Amps out (adc) </td>
-  <td align="left"><span id="ampsout"></span> </td>
+  <td align="left">Amps (adc) </td>
+  <td align="left"><span id="amps"></span> </td>
 </tr>
 <tr>
   <td align="left">Free Memory</td>      
@@ -161,10 +153,8 @@ function loadDoc() {
       if (this.readyState == 4 && this.status == 200) {
         var obj = JSON.parse(this.responseText);
         document.getElementById("volts").innerHTML = obj.data[0].dataValue;
-        document.getElementById("charger").innerHTML = obj.data[1].dataValue;
-        document.getElementById("solar").innerHTML = obj.data[2].dataValue;
-        document.getElementById("ampsout").innerHTML = obj.data[3].dataValue;
-        document.getElementById("freemon").innerHTML = obj.data[4].dataValue;
+        document.getElementById("amps").innerHTML = obj.data[1].dataValue;
+        document.getElementById("freemon").innerHTML = obj.data[2].dataValue;
       }
     };
     xhttp.open("GET", "/test", true); xhttp.send();

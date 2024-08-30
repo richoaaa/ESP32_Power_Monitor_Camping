@@ -124,10 +124,10 @@ input:checked + .slider:before {
 <body>
 
 <p><big> Configuration</big></p>
-<p><a style="font-size:20px" href="http://192.168.4.1/" class="button">Home</a> <a href="/GRAPH_page" class="button">Graphs</a> <a href="/STATS_page" class="button">Stats</a> <a href="/update" class="button">Update</a></p>
+<p><a style="font-size:20px" href="http://192.168.4.1/" class="button">Home</a><a href="/STATS_page" class="button">Stats</a><a href="/update" class="button">Update</a></p>
 <br/>
 
-<form method="post" enctype=\"application/x-www-form-urlencoded\" id="config_frm">
+<form method="post" enctype=\"application/x-www-form-urlencoded\" id="config_frm">   
 
     <div class='form-floating'>
     <table  align="center">
@@ -140,7 +140,7 @@ input:checked + .slider:before {
         <td align="right"><label for="battery">Charge Efficiency (%)</label></td>
         <td><input for='number' class='form-control' maxlength="3" max="255" size="3" min="1" max="100" name='ChargeEfficiency' id ="ChargeEfficiency" pattern="\d*" inputmode="numeric" type="text"></td>
       </tr>
-     </table>
+     </table>    
      </div>
 
     <br/>
@@ -164,10 +164,8 @@ input:checked + .slider:before {
       <tr><td></td></tr>
       <br/>
       <tr>
-        <!--<td><label for="appt">Set Clock:</label></td>
-        <input type="time" id="dateTimeID" name="dateTimeID" value="">-->
-        <label for="dateTimeID">Date and Time:</label>
-        <input type="text" id="dateTimeID" name="dateTimeID" readonly>
+        <td><label for="appt">Set Clock:</label></td>
+        <td><input type="time" id="clockID" name="clockID"></td>
       </tr>
     </div>
 
@@ -191,31 +189,7 @@ input:checked + .slider:before {
 <p><a Free Memory <span id="Memory"</a> </p>
 
 
-<script src="/moment.min.js"></script>
 <script type = "text/javascript">
-
-const now = new Date();
-
-const epochTime = Math.floor(now.getTime() / 1000); // Get the epoch time in seconds
-
-// Create a hidden input field to store the epoch time
-const hiddenEpochTimeField = document.createElement('input');
-hiddenEpochTimeField.type = 'hidden';
-hiddenEpochTimeField.name = 'epochTime';
-hiddenEpochTimeField.value = epochTime;
-
-// Add the hidden field to the form
-const configForm = document.getElementById('config_frm');
-configForm.appendChild(hiddenEpochTimeField);
-
-// Display the formatted date and time in the visible field (optional)
-const dateTimeID = document.getElementById('dateTimeID');
-const options = { timeZone: 'Asia/Shanghai' }; // Set the desired time zone
-const formattedDateTime = now.toLocaleString('en-US', options);
-dateTimeID.value = formattedDateTime;
-
-
-
 
 const toggle = document.querySelector('.toggle input')
 
@@ -230,7 +204,7 @@ function loadDoc() {
         var obj = JSON.parse(this.responseText);
         document.getElementById("battery").value = obj.data[0].dataValue;
         document.getElementById("ChargeEfficiency").value = obj.data[1].dataValue;
-        document.getElementById("Memory").innerHTML = obj.data[2].dataValue;
+        document.getElementById("Memory").innerHTML = obj.data[2].dataValue;   
       }
     };
     xhttp.open("GET", "/config", true); xhttp.send();
@@ -239,20 +213,34 @@ window.onload=loadDoc();
 
   
 function ButtonSave() {
-      confirm("Updated!");
       var xhttp = new XMLHttpRequest(); 
       xhttp.open("PUT", "SaveConfigButton", false);
       xhttp.send();
+      confirm("Updated!");
       }
 
 function ButtonReboot() {
   if (confirm("Reboot microcontroller?")) { 
     var xhttp = new XMLHttpRequest(); 
-    xhttp.send();
     xhttp.open("PUT", "RebootButton", false);
+    xhttp.send();
   }
 }
 
+function ZeroLevel() {
+      if (confirm("Calibrate Level?")) { 
+        var xhttp = new XMLHttpRequest(); 
+        xhttp.open("PUT", "ZeroLevelButton", false);
+        xhttp.send();
+        }
+      }
+
+// function SetClock() {
+//       var xhttp = new XMLHttpRequest(); 
+//       xhttp.open("PUT", "SetClockButton", false);
+//       xhttp.send();
+//       confirm("Updated!");
+//       }
 
 // function to handle the response from the ESP
     function response(){

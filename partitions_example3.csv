@@ -1,0 +1,7 @@
+#Name,Type,SubType,Offset,Size,Flags
+nvs,data,nvs,,0x6000,
+otadata,data,ota,,0x271000,
+app_0,app,ota_0,,0x100000,
+app_1,app,ota_1,,0x100000,
+spiffs,data,spiffs,,0x180000,
+coredump,data,coredump,,0x180000,

@@ -33,8 +33,15 @@ const char GRAPH_page[] PROGMEM = R"=====(
 
 <script>
 
+Highcharts.setOptions({
+  global: {
+    useUTC: false
+    // timezoneOffset: 8 * 60 // UTC+8 in minutes
+  }
+});
+
 var chartT = new Highcharts.Chart({
-  chart:{ 
+  chart:{
     renderTo : 'chart-temperature',
     type: 'area'
   },
@@ -46,7 +53,7 @@ var chartT = new Highcharts.Chart({
       type: 'area',
       yAxis: 0,
       tooltip: {
-          xDateFormat: '%k:%M:%S',
+          xDateFormat: '%I:%M:%S %p',
           valueSuffix: ' A'
         }
     },
@@ -56,7 +63,7 @@ var chartT = new Highcharts.Chart({
       type: 'area',
       yAxis: 0,
       tooltip: {
-          xDateFormat: '%k:%M:%S',
+          xDateFormat: '%I:%M:%S %p',
           valueSuffix: ' A'
         }
     },
@@ -66,7 +73,7 @@ var chartT = new Highcharts.Chart({
       type: 'line',
       yAxis: 1,
       tooltip: {
-          xDateFormat: '%k:%M:%S',
+          xDateFormat: '%I:%M:%S %p',
           valueSuffix: ' V'
         }
     }],
@@ -91,10 +98,10 @@ var chartT = new Highcharts.Chart({
   },
   xAxis: {
     type: 'datetime',
-    dateTimeLabelFormats: {
-      minute: '%k:%M',
-      hour: '%H:%M'
-    }
+   tooltip: {
+        xDateFormat: '%a %I:%M:%S %p', // Specify the date format for the tooltip
+        valueSuffix: ' A'
+    },
   },
   yAxis: [{  // Primary yAxis
     labels: {format: '{value}'},
@@ -127,7 +134,8 @@ var chart2 = new Highcharts.Chart({
       color: '#0000FF',
       yAxis: 0,
       tooltip: {
-          xDateFormat: '%k:%M',
+          valueDecimals: 1, // Adjust the number of decimals as needed
+          xDateFormat: '%a %I:%M:%S %p',
           valueSuffix: ' A'
         }
     },
@@ -138,18 +146,20 @@ var chart2 = new Highcharts.Chart({
       color: '#FF0000',
       yAxis: 0,
       tooltip: {
-          xDateFormat: '%k:%M',
+          valueDecimals: 1, // Adjust the number of decimals as needed
+          xDateFormat: '%a %I:%M:%S %p',
           valueSuffix: ' A'
         }
     },
     {
       name: 'Volts',
       type: 'line',
-     data: [],
+      data: [],
       color: '#00BF00',
       yAxis: 1,
       tooltip: {
-          xDateFormat: '%k:%M',
+          valueDecimals: 1, // Adjust the number of decimals as needed
+          xDateFormat: '%a %I:%M:%S %p',
           valueSuffix: ' V'
         }
     }
@@ -175,83 +185,84 @@ var chart2 = new Highcharts.Chart({
     dateTimeLabelFormats: {
       minute: '%H:%M',
       hour: '%H:%M',
-      day: 'Day %d'
+      day: '%a'
     }
   },
   yAxis: [{  // Primary yAxis
     labels: {format: '{value}'},
     title: { text: 'Amps' },
-    minrange: 0.5,
+    minrange: 0.5
   }, {  // Secondary yAxis
-  min: 0,
-  minrange: 0.5,
   title: { text: 'Volts' },
   labels: {format: '{value}'},
-  type: 'line',
+  minrange: 0.5,
   opposite: true
   }],
-  credits: { enabled: false }
-});
-
-
-var chart3 = new Highcharts.Chart({
-  chart:{ 
-    renderTo : 'chart-cumulative',
-    type: 'area'
-  },
-  title: { text: 'AMP Cumulative History' },
-  series: [
-    {
-      name: 'In',
-      data: [],
-      color: '#0000FF',
-    },
-    {
-      name: 'Out',
-      data: [],
-      color: '#FF0000',
-    }
-  ],
   tooltip: {
-            type: 'datetime',
-            xDateFormat: '%k:%M',
-            headerFormat: '<table><tr><th colspan="2">{point.key}</th></tr>',
-            pointFormat: '<tr><td style="color: {series.color}">{series.name} </td>' +
-            '<td style="text-align: right"><b>{point.y} amps</b></td></tr>',
-            footerFormat: '</table>',
-            shared: true,
-            useHTML: true,
-            valueDecimals: 2
-          },
-  plotOptions: {
-    area: { animation: false,
-    dataLabels: { enabled: false },
-    marker: {
-                enabled: false,
-                symbol: 'circle',
-                radius: 2,
-                states: {
-                    hover: {
-                        enabled: true
-                    }
-                }
-            }
+        shared: true
     },
-    series: { color: '#059e8a' }
-  },
-  xAxis: {
-    type: 'datetime',
-    dateTimeLabelFormats: {
-      minute: '%H:%M',
-      hour: '%H:%M',
-      day: 'Day %d %H:%M'
-      }
-  },
-  yAxis: {
-    title: { text: 'Amps' }
-  },
   credits: { enabled: false }
 });
+
+  var chart3 = new Highcharts.Chart({
+    chart: {
+      // timezone: 'Australia/Perth',
+      renderTo : 'chart-cumulative',
+      animation: false,
+      zoomType: 'x',
+      type: 'column'
+    },
+    rangeSelector: false,
+    title: {
+      text: 'Daily Performance'
+    },
+    plotOptions: {
+      column: {
+        stacking: 'normal',
+        turboThreshold: 0, // Disable turboThreshold for column series
+        tooltip: {
+          valueDecimals: 0, // Adjust the number of decimals as needed
+          valueSuffix: ' Ah', // Add your desired value suffix
+        },
+      },
+    },
+    xAxis: {
+      gapSize: 1,
+      type: 'datetime',
+      dateTimeLabelFormats: {
+        day: '%a'
+      },
+      // labels: {
+      //   formatter: function() {
+      //     return Highcharts.dateFormat('%d %b', this.value); // Use your desired date format
+      // }
+      // }
+      // minRange: 24 * 3600 * 1000, // Minimum range of one day
+    },
+    yAxis: {
+      title: {
+        text: 'Amp Hours (Ah)',
+      },
+    },
+    legend: {
+      reversed: true
+    },
+    series: [
+      {
+        name: 'Amp Hours In',
+        color: 'blue', // Customize the color for Amp Hours In
+        // pointInterval: 24 * 3600 * 1000 // One day in milliseconds
+      },
+      {
+        name: 'Amp Hours Out',
+        color: 'red', // Customize the color for Amp Hours Out
+        // pointInterval: 24 * 3600 * 1000 // One day in milliseconds
+      },
+    ],
+    credits: {
+      enabled: false
+    }
+  });
 
 
 setInterval(function liveData(){
@@ -259,120 +270,82 @@ setInterval(function liveData(){
   xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
       var obj = JSON.parse(this.responseText);
-       var x = obj.graph[0];
-       var y = parseFloat(obj.graph[1]);
-       var z = parseFloat(obj.graph[2]);
-       var a = parseFloat(obj.graph[3]);
-       if(chartT.series[0].data.length > 50) {
-          chartT.series[0].addPoint([x, y], true, true, true);
-          chartT.series[1].addPoint([x, z],true,true,true);
-          chartT.series[2].addPoint([x, a],true,true,true);
-        } else {
-          chartT.series[0].addPoint([x, y], true, false, true);
-          chartT.series[1].addPoint([x, z],true,false,true);
-          chartT.series[2].addPoint([x, a],true,false,true);
-        }
+      var x = obj.graph[0] * 1000;
+      // console.log("time: ", x);
+      var y = parseFloat(obj.graph[1]);
+      var z = parseFloat(obj.graph[2]);
+      var a = parseFloat(obj.graph[3]);
+      if(chartT.series[0].data.length > 50) {
+        chartT.series[0].addPoint({ x: x, y: y }, true, true, true);
+        chartT.series[1].addPoint({ x: x, y: z }, true, true, true);
+        chartT.series[2].addPoint({ x: x, y: a }, true, true, true);
+      } else {
+        chartT.series[0].addPoint({ x: x, y: y }, true, false, true);
+        chartT.series[1].addPoint({ x: x, y: z }, true, false, true);
+        chartT.series[2].addPoint({ x: x, y: a }, true, false, true);
+      }
     }
   };
   xhr.open("GET", "/graphdata", true);
   xhr.send();
 }, 1500 ) ;
 
-
-setInterval(function AmpsIn(){
+setInterval(function DataGraph2(){
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
       var obj = JSON.parse(this.responseText);
-      console.log(obj);
-      chart2.series[0].setData(obj.ampin);
+      // console.log(obj);
+
+      // Convert epoch time values in seconds to milliseconds
+      obj[0].ampin.forEach(function(dataPoint) {
+        dataPoint[0] *= 1000; // Convert seconds to milliseconds
+      });
+
+      obj[1].ampout.forEach(function(dataPoint) {
+        dataPoint[0] *= 1000; // Convert seconds to milliseconds
+      });
+
+      obj[2].volts.forEach(function(dataPoint) {
+        dataPoint[0] *= 1000; // Convert seconds to milliseconds
+      });
+
+      console.log(obj[0].ampin);
+      chart2.series[0].setData(obj[0].ampin);
+      chart2.series[1].setData(obj[1].ampout);
+      chart2.series[2].setData(obj[2].volts);
     }
   };
-  xhr.open("GET", "/graphdataAmpsIn", true);
+  xhr.open("GET", "/graphdata2", true);
   xhr.send();
 }, 5000 ) ;
 
 
-setInterval(function AmpsOut(){
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      var obj = JSON.parse(this.responseText);
-      console.log(obj);
-      chart2.series[1].setData(obj.ampout);
-    }
-  };
-  xhr.open("GET", "/graphdataAmpsOut", true);
-  xhr.send();
-}, 5000 ) ;
 
-setInterval(function VoltsOut(){
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      var obj = JSON.parse(this.responseText);
-      console.log(obj);      
-      chart2.series[2].setData(obj.voltsout);
-    }
-  };
-  xhr.open("GET", "/graphdatavolts", true);
-  xhr.send();
-}, 5000 ) ;
-  
-
-setInterval(function AmpsInCum(){
+setInterval(function AmpHistory(){
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
       var obj = JSON.parse(this.responseText);
 
-      chart3.series[0].setData(obj.ampincum);
+      // Convert epoch time values in seconds to milliseconds
+      obj[0].amphrin.forEach(function(dataPoint) {
+        dataPoint[0] *= 1000; // Convert seconds to milliseconds
+      });
+
+      obj[1].amphrout.forEach(function(dataPoint) {
+        dataPoint[0] *= 1000; // Convert seconds to milliseconds
+      });
+
+      chart3.series[0].setData(obj[0].amphrin);
+      chart3.series[1].setData(obj[1].amphrout);
     }
   };
-  xhr.open("GET", "/graphdataAmpsInCum", true);
+  xhr.open("GET", "/graphdataAh", true);
   xhr.send();
-}, 5000 ) ;
+}, 6000 ) ;
 
 
-setInterval(function AmpsOutCum(){
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      var obj = JSON.parse(this.responseText);
-      chart3.series[1].setData(obj.ampoutcum);
-    }
-  };
-  xhr.open("GET", "/graphdataAmpsOutCum", true);
-  xhr.send();
-}, 5000 ) ;  
-
-
-
-
-// if (!!window.EventSource) {
-//   var source = new EventSource('/events');
-
-//   source.addEventListener('open', function(e) {
-//     console.log("Events Connected");
-//   }, false);
-
-//   source.addEventListener('error', function(e) {
-//     if (e.target.readyState != EventSource.OPEN) {
-//       console.log("Events Disconnected");
-//     }
-//   }, false);
-
-//   source.addEventListener('message', function(e) {
-//     console.log("message", e.data);
-//   }, false);
-
-//   source.addEventListener('new_readings', function(e) {
-//     console.log("new_readings", e.data);
-//     var myObj = JSON.parse(e.data);
-//     console.log(myObj);
-//     plotTemperature(myObj);
-//   }, false);
-// }
 
 
 </script>
