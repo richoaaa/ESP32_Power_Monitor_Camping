@@ -7,7 +7,7 @@
   Charging shunt D36
   Batt sense     D35
   DS18B20        D32
-    */
+*/
 // #include <ESP8266WiFi.h>
 // #include <WiFiClient.h>
 // #include <ESP8266WebServer.h>
@@ -33,7 +33,7 @@
 // #include <Update.h>
 
 #include <WiFiClient.h>
-#include <ArduinoJson.h>
+// #include <ArduinoJson.h>
 #include "index.h"
 #include "config.h"
 #include "test.h"
@@ -55,7 +55,7 @@ OneWire ds(tempPin);                     //Temperature sensor setup
 unsigned long lastMeasureTime = 0;       // Storing the temperature time shift
 char Temp1[10];                          // Storing the temperature string result for parsing to client
 float tempsum1 = 0.0;                    // Storing the sum of the temperatures read over a given time period
-int counter;                             // Stores the number of samples over a given sample period for voltage & current sensors
+int counter = 0;                             // Stores the number of samples over a given sample period for voltage & current sensors
 int counter2;                            // Stores the number of samples over a given sample period for temperature
 int counter15 = 0;                       // Stores the number of samples over a given sample period for 15 minute intervzls
 int counter2hr = 0;                      // Stores the number of samples over a given sample period for 2 hr intervals
@@ -180,12 +180,12 @@ String Message = "initialising...";
 String Status = "initialising...";
 String json;
 // JSONVar SensorReadings;
-JsonVariant SensorReadings;
+// JsonVariant SensorReadings;
 int hrAdj = 0;
 int minAdj = 0;
 unsigned long millisAdj = 0;  //  Millis when time adjustment is captured
 
-unsigned long interval = 1000;  // time to spend taking a sample
+unsigned long interval = 1000;  // 1s to take a sample
 String RegisteredTime;         // to track the config time
 time_t registeredMillis = 0;   //  Millis at which the updated date/time was stored
 time_t registeredEpochTime;
@@ -217,11 +217,11 @@ time_t stringToTime_t(String timeString) {
 void handlePage2() {  //  CONFIGURATION PAGE
   // Serial.println("Settings page");
   if (server.method() == HTTP_POST) {
-    String tempy3 = server.arg("ChargeEfficiency");
-    String tempy4 = server.arg("battery");
-    String tempy5 = server.arg("clockID"); // Ignore clockID as time is extracted from dateTimeID
+    String ChrgEff = server.arg("ChargeEfficiency");
+    String Batt = server.arg("battery");
+    String ClockID = server.arg("clockID"); // Ignore clockID as time is extracted from dateTimeID
     String tempy6, tempy7;
-    String tempy8 = server.arg("Reset");
+    String Rst = server.arg("Reset");
     RegisteredTime = server.arg("dateTimeID"); // Use dateTimeID for time selection
     registeredMillis = millis();   //  Millis at which the updated date/time was stored
     // Serial.print("Javascript epochtime: "); Serial.println(server.arg("epochTime"));
@@ -237,17 +237,17 @@ void handlePage2() {  //  CONFIGURATION PAGE
     // Serial.println("Running EEPROM burn...");
 
     if (TempMillis >= 40) {
-      EEPROM.write(0, tempy4.toInt());  //Battery capacity
-      BatCapacity = tempy4.toInt();
+      EEPROM.write(0, Batt.toInt());  //Battery capacity
+      BatCapacity = Batt.toInt();
     }
     if (TempMillis >= 60) {
-      EEPROM.write(1, tempy3.toInt());  // Charge Efficiency
-      ChargeFactor = tempy3.toInt();
+      EEPROM.write(1, ChrgEff.toInt());  // Charge Efficiency
+      ChargeFactor = ChrgEff.toInt();
     }
     if (TempMillis >= 80) {
       EEPROM.commit();
     }
-    if (tempy8 == "on") {
+    if (Rst == "on") {
       amphIn = 0;
       amphOut = 0;
     }
@@ -269,6 +269,8 @@ void handlePage4() {  //ampsOut GRAPH PAGE
 // void ampsOutUpdatePage() {                        // Evoked when somebody accesses the root of the server.
 //   server.send(200, "text/html", UPDATE_page);  //Send web page
 // }
+
+
 void handleUpload() {
   updating = true;  // Set updating flag to true
   HTTPUpload& upload = server.upload();
@@ -616,10 +618,8 @@ void getData() {  // Content for main page
 }
 
 
-void (*resetFunc)(void) = 0;  //declare reset function at address 0
-
 void SystemReboot() {
-  resetFunc();  //call reset to restart the microcontroller
+  ESP.restart();  //call reset to restart the microcontroller
 }
 
 String getContentType(String filename) {  // convert the file extension to the MIME type
@@ -1003,7 +1003,7 @@ void draw_m0_h_with_extra_blank()
 
 void ReadTemperatureSensors() {
   counter2++;
-  tempsum1 = tempsum1 + readTempData1();
+  tempsum1 += readTempData1();
   if (counter2 == 20) {
     tempavg = tempsum1 / counter2;
     counter2 = 0;
@@ -1029,140 +1029,140 @@ void readings() {
   convertToHumanReadableShortTime(GraphTimeCommon); // Returns ReadableTime for LCD display
   GraphTimeHistory(); //Returns GraphTimeStarted, the actual epoch time the ESP started
   previousMillis = millis();
-  solAmpsSum = 0, chargerAmpsSum = 0; int tempAmpsOutSum = 0; int tempvoltsSum = 0; counter = 0;
+  solAmpsSum = 0, chargerAmpsSum = 0; int tempAmpsOutSum = 0; int tempvoltsSum = 0; 
   previousMillis = millis();
   Cycle15minCounter++;
 
-  while ((millis() - previousMillis) < interval) {
-    counter++;
-    tempvoltsSum += analogRead(voltsPin);
-    chargerAmpsSum += analogRead(chargerPin);
-    solAmpsSum += analogRead(solarPin);
-    tempAmpsOutSum += analogRead(ampsOutPin);
-  }
-  ReadTemperatureSensors();
-  voltsADC = (tempvoltsSum / counter);
-  chargerADC = chargerAmpsSum / counter;
-  solarADC = solAmpsSum / counter;
-  ampsOutADC = tempAmpsOutSum / counter;
+  counter++;
+  tempvoltsSum += analogRead(voltsPin);
+  chargerAmpsSum += analogRead(chargerPin);
+  solAmpsSum += analogRead(solarPin);
+  tempAmpsOutSum += analogRead(ampsOutPin);
+  if ((millis() - previousMillis) > interval) {
+    voltsADC = (tempvoltsSum / counter);
+    chargerADC = chargerAmpsSum / counter;
+    solarADC = solAmpsSum / counter;
+    ampsOutADC = tempAmpsOutSum / counter;
+    counter = 0;
+    ReadTemperatureSensors();
 
-  volts = (voltsADC - 181.388) / 196.804 ;
-  chargerAmps = (chargerADC - 3110.4131) / -71.3508;
+    volts = (voltsADC - 181.388) / 196.804 ;
+    chargerAmps = (chargerADC - 3110.4131) / -71.3508;
 
-  solarAmps = (solarADC -  3080.323) / -233.438 ;
-  ampsOut = abs((ampsOutADC - 3155.1656) / -115.8277);
-  if (solarAmps < cutOffLimit) {solarAmps = 0;}
-  if (chargerAmps < cutOffLimit) {chargerAmps = 0;} // ampsOut cutoff is not required
+    solarAmps = (solarADC -  3080.323) / -233.438 ;
+    ampsOut = abs((ampsOutADC - 3155.1656) / -115.8277);
+    if (solarAmps < cutOffLimit) {solarAmps = 0;}
+    if (chargerAmps < cutOffLimit) {chargerAmps = 0;} // ampsOut cutoff is not required
 
-  ampsIn = solarAmps + chargerAmps;
-  ampsInSum += ampsIn; // the following variables are used for 15 minute accounting
-  ampsOutSum += ampsOut;
-  voltsSum += volts;
+    ampsIn = solarAmps + chargerAmps;
+    ampsInSum += ampsIn; // the following variables are used for 15 minute accounting
+    ampsOutSum += ampsOut;
+    voltsSum += volts;
 
-  // *** DETERMINE THE MIN/MAX VOLTS AND THEIR chargerAmps RESPECTIVE TIME***
-  if (volts < MinVolts) {
-    MinVolts = volts;
-    MinVoltsTime = readableTime;
-  }
-  if (volts > MaxVolts) {
-    MaxVolts = volts;
-    MaxVoltsTime = readableTime;
-  }
-
-  amphIn15 += ampsIn * (CycleTime / 3600000.00000000);  // 3,600,000 is 1 hr
-  amphIn = amphIn + ampsIn * (CycleTime / 3600000.00000000); // RETURNS THE TOTAL AH
-  amphOut15 += ampsOut * (CycleTime / 3600000.00000000);
-  amphOut = amphOut + ampsOut * (CycleTime / 3600000.00000000);
-  ampsIn15log[0] = ampsInSum/Cycle15minCounter;  //  Updates the ampsin graph
-  ampsOut15log[0] = ampsOutSum / Cycle15minCounter;  //  Updates the ampsout graph
-  // Serial.print("Ampsin15log: "); Serial.println(ampsIn15log[0]);
-  volts15log[0] = voltsSum / Cycle15minCounter;   //  Updates the volts graph
-  amphIn15log[0] = amphIn15;
-  amphOut15Log[0] = amphOut15;
-
-  if (ampsIn > MaxampIn) {
-    MaxampIn = ampsIn;
-    MaxampInTime = readableTime;
-  }
-
-  if (ampsOut > MaxampOut) {
-    MaxampOut = ampsOut;
-    MaxampOutTime = readableTime;
-  }
-
-  CycleTime = millis() - VoidCycleTime;
-  VoidCycleTime = millis();
-
-  //15 minute averages for use in graphs
-  if (millis() - minute15 > const15minute) {  // minute15 is the millis at startup and after each 15 minute cycle
-    interval15s = millis() / const15minute;  // getting the number of 15 minutes cycles since powered on
-    // Serial.println("Shifting array positions...");
-    for (int i = interval15s; i > 0 && i < 1344; i--) {  // go through the array and shift along
-      ampsIn15log[i] = ampsIn15log[i-1];
-      ampsOut15log[i] = ampsOut15log[i-1];
-      amphIn15log[i] = amphIn15log[i-1];
-      amphOut15Log[i] = amphOut15Log[i-1];
-      volts15log[i] = volts15log[i-1];
+    // *** DETERMINE THE MIN/MAX VOLTS AND THEIR chargerAmps RESPECTIVE TIME***
+    if (volts < MinVolts) {
+      MinVolts = volts;
+      MinVoltsTime = readableTime;
     }
-    
-    if (ampsOut15log[0] > ampsIn15log[0]) {
-      Message = "DISCHARGING";
-    } else if (ampsOut15log[0] < ampsIn15log[0]) {
-      Message = "CHARGING";
-    } else if (ampsOut15log[0] == ampsIn15log[0]) {
-      Message = "STATIC";
+    if (volts > MaxVolts) {
+      MaxVolts = volts;
+      MaxVoltsTime = readableTime;
     }
-    if (millis() - millis2hr >= const2hr) {
-      volts2hr = 0;
-      for (int i = 1; i <= 8; i++) {
-        volts2hr += volts15log[i];
+
+    amphIn15 += ampsIn * (CycleTime / 3600000.00000000);  // 3,600,000 is 1 hr
+    amphIn = amphIn + ampsIn * (CycleTime / 3600000.00000000); // RETURNS THE TOTAL AH
+    amphOut15 += ampsOut * (CycleTime / 3600000.00000000);
+    amphOut = amphOut + ampsOut * (CycleTime / 3600000.00000000);
+    ampsIn15log[0] = ampsInSum/Cycle15minCounter;  //  Updates the ampsin graph
+    ampsOut15log[0] = ampsOutSum / Cycle15minCounter;  //  Updates the ampsout graph
+    // Serial.print("Ampsin15log: "); Serial.println(ampsIn15log[0]);
+    volts15log[0] = voltsSum / Cycle15minCounter;   //  Updates the volts graph
+    amphIn15log[0] = amphIn15;
+    amphOut15Log[0] = amphOut15;
+
+    if (ampsIn > MaxampIn) {
+      MaxampIn = ampsIn;
+      MaxampInTime = readableTime;
+    }
+
+    if (ampsOut > MaxampOut) {
+      MaxampOut = ampsOut;
+      MaxampOutTime = readableTime;
+    }
+
+    CycleTime = millis() - VoidCycleTime;
+    VoidCycleTime = millis();
+
+    //15 minute averages for use in graphs
+    if (millis() - minute15 > const15minute) {  // minute15 is the millis at startup and after each 15 minute cycle
+      interval15s = millis() / const15minute;  // getting the number of 15 minutes cycles since powered on
+      // Serial.println("Shifting array positions...");
+      for (int i = interval15s; i > 0 && i < 1344; i--) {  // go through the array and shift along
+        ampsIn15log[i] = ampsIn15log[i-1];
+        ampsOut15log[i] = ampsOut15log[i-1];
+        amphIn15log[i] = amphIn15log[i-1];
+        amphOut15Log[i] = amphOut15Log[i-1];
+        volts15log[i] = volts15log[i-1];
       }
-      volts2hr = volts2hr / 8;  //  Average voltage over 2 hours
-      millis2hr = millis();
-    }
-    
+      
+      if (ampsOut15log[0] > ampsIn15log[0]) {
+        Message = "DISCHARGING";
+      } else if (ampsOut15log[0] < ampsIn15log[0]) {
+        Message = "CHARGING";
+      } else if (ampsOut15log[0] == ampsIn15log[0]) {
+        Message = "STATIC";
+      }
+      if (millis() - millis2hr >= const2hr) {
+        volts2hr = 0;
+        for (int i = 1; i <= 8; i++) {
+          volts2hr += volts15log[i];
+        }
+        volts2hr = volts2hr / 8;  //  Average voltage over 2 hours
+        millis2hr = millis();
+      }
+      
 
-    if (SOC < 90 && volts15log[0] < floatVoltage) {
-      Status = "BOOST...";
-    } else if (SOC > 90 && volts15log[1] > floatVoltage && volts2hr < floatVoltage) {
-      Status = "ABSORPTION...";
-    } else if (SOC > 90 && volts2hr > floatVoltage) {
-      Status = "FLOAT...";
+      if (SOC < 90 && volts15log[0] < floatVoltage) {
+        Status = "BOOST...";
+      } else if (SOC > 90 && volts15log[1] > floatVoltage && volts2hr < floatVoltage) {
+        Status = "ABSORPTION...";
+      } else if (SOC > 90 && volts2hr > floatVoltage) {
+        Status = "FLOAT...";
+        amphIn = BatCapacity;
+        amphOut = 0.0;
+      } else {
+        Status = "INITIALISING...";
+      }
+    amphIn15 = 0;
+    amphOut15 = 0;
+    ampsOutSum = 0;  // this resets the average amps
+    ampsInSum = 0;   // this resets the average amps
+    voltsSum = 0;    // this resets the average voltage
+    // Serial.println("15 minute routine complete...");
+    minute15 = millis();
+    Cycle15minCounter = 0;
+    }
+    SOC = (BatCapacity + (amphIn * ChargeFactor / 100.00) - amphOut) / BatCapacity * 100;
+
+    if (SOC < 0) {
+      amphIn = 0;
+      amphOut = BatCapacity;
+      SOC = 0;
+    } else if (SOC > 100) {
       amphIn = BatCapacity;
-      amphOut = 0.0;
-    } else {
-      Status = "INITIALISING...";
+      amphOut = 0;
+      SOC = 100;
     }
-  amphIn15 = 0;
-  amphOut15 = 0;
-  ampsOutSum = 0;  // this resets the average amps
-  ampsInSum = 0;   // this resets the average amps
-  voltsSum = 0;    // this resets the average voltage
-  // Serial.println("15 minute routine complete...");
-  minute15 = millis();
-  Cycle15minCounter = 0;
-  }
-  SOC = (BatCapacity + (amphIn * ChargeFactor / 100.00) - amphOut) / BatCapacity * 100;
 
-  if (SOC < 0) {
-    SOC = 0;
-    amphIn = 0;
-    amphOut = BatCapacity;
-  } else if (SOC > 100) {
-    amphIn = 0;
-    amphOut = 0;
-    SOC = 100;
-  }
-
-  if (SOC > MaxSOC) {
-    MaxSOC = SOC;
-    MaxSOCTime = readableTime;
-  } else if (SOC < MinSOC) {
-    MinSOC = SOC;
-    MinSOCTime = readableTime;
+    if (SOC > MaxSOC) {
+      MaxSOC = SOC;
+      MaxSOCTime = readableTime;
+    } else if (SOC < MinSOC) {
+      MinSOC = SOC;
+      MinSOCTime = readableTime;
+    }
   }
 }
-
 
 void writeLongArrayIntoEEPROM(int address, long numbers[], int arraySize)
 {
@@ -1268,7 +1268,6 @@ void loop() {
         client.stop();
     }
     digitalWrite(LED, LOW);
-    ReadTemperatureSensors();
     readings();
     GraphTime();
     GraphTimeHistory();
